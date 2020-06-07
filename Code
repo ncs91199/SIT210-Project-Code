@@ -1,0 +1,74 @@
+#include <SPI.h>
+#include <SD.h>
+
+File document;
+// pins for buzzer and ultrasonic
+int const pintrig = 9;
+int const pinecho = 10;
+int const buzzer = 8;
+
+void setup()
+{
+  pinMode(pintrig, OUTPUT); // it will be the output on trigger pin
+  pinMode(pinecho, INPUT); // it will be the input on echo pin
+  pinMode(buzzer, OUTPUT); // output of buzzer to create sound
+  Serial.begin(9600);
+  document = SD.open("readings.txt", FILE_WRITE); //Open the file in sd card
+  if(document) {
+    Serial.print("noted readings");
+    document.println("readings of working model");
+    }
+  
+  else{
+    Serial.println("unable to open file"); //print this line to serial monitor
+  }
+  document.close(); // close document file
+}
+
+void loop()
+{
+  int moisture;
+  File document;
+  moisture = analogRead(0); //connect moisture sensor to analog 0
+  // period is input width of pulse, dis is the distance to any thing or stuff in centi meters
+  int period, dis;
+  // Output pulse on trigPin(lms)
+  digitalWrite(pintrig, HIGH); 
+  delay(1);
+  digitalWrite(pintrig, LOW);
+  // pulse input at echo pin
+  period = pulseIn(pinecho, HIGH);
+  // distance is half of the period and devided by 29.1
+  dis = (period/2) / 29.1;
+  document = SD.open("readings.txt", FILE_WRITE); //open the file
+   
+    if (dis >= 80 && moisture >= 15) // change the moisture level and distance according to your need
+    {
+      digitalWrite(buzzer, HIGH);
+      Serial.print(dis);
+      Serial.print(" cm, ");
+      Serial.print(moisture); //value of moisture 
+      Serial.println(" Tap is open! Turn it off if you are not using!");
+      document.print(dis);// in the readings.txt file, ignore this part of code if you don't want to record data
+      document.print(" cm, ");
+      document.print(moisture); 
+      document.print("moisture level");
+      document.println("Buzzer is active");
+      
+  }
+  else {
+      //Buzzer won't be making sound/noise
+      digitalWrite(buzzer, LOW);
+      Serial.print("Everything is fine, ");
+      Serial.print(dis);
+      Serial.println(" cm ");
+      document.println("Everything is fine!"); // write to readings.txt file in SD card
+    }
+    while (document.available()) {
+        Serial.write(document.read()); //read the file
+      }
+    document.close(); 
+    
+    
+    delay(5000); //delay of 5 seconds between two results
+}
